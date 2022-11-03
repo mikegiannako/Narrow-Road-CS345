@@ -1,19 +1,27 @@
 #include <stdio.h>
 #include <stdlib.h>
-//#include <pthread.h>
+#include <pthread.h>
 #include "random.h"
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
 typedef enum {RED, BLUE} Color;
-typedef enum {EAST, WEST} Direction;
-typedef enum {ROAD, PAVEMENT} State;
+typedef enum {EAST = 1, WEST = -1} Direction;
+typedef enum {ROAD, PAVEMENT, FINISHED} State;
 
 typedef struct Pedestrian{
     int id;                 // Pedestrian ID
+    int index;              // Pedestrian index on the road
     Color color;            // Either Blue or Red
     Direction direction;    // Either East or West
-    State state;            // Either Road or Pavement
-    //pthread_t thread;       // The thread that represents this pedestrian
+    State state;            // Either Road, Pavement, or Finished
 }* Pedestrian_t;
+
+typedef struct Arg{
+    Pedestrian_t pedestrian;
+    Pedestrian_t *road;
+    int road_length;
+}* Arg_t;
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
@@ -34,6 +42,12 @@ Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, D
 void remove_pedestrians(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction);
 // Finds the dominant direction of the pedestrians of the chosen color
 Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Color color);
+// Changes the state of all pedestrians in the given road to the given state
+void change_state(int capacity, Pedestrian_t pedestrians[], State state);
+// Returns if the given road is empty or not
+int is_empty(int capacity, Pedestrian_t pedestrians[]);
+// Prints the state of the road and the pavement
+void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]);
 
 
 int main(int argc, char *argv[]){
@@ -51,14 +65,17 @@ int main(int argc, char *argv[]){
     }
 
     // Create the road full of pedestrians
-    Pedestrian_t* road = calloc(num_pedestrians, sizeof(Pedestrian_t));
+    Pedestrian_t *road = calloc(num_pedestrians, sizeof(Pedestrian_t));
     // Also keeps the count of blue and red pedestrians
     int blue_count = init_road(num_pedestrians, road);
     Color dominant_color = blue_count > num_pedestrians / 2 ? BLUE : RED;
 
     // Prints the road's initial state
+    puts("Initial state:");
     print_road(num_pedestrians, road);
-    puts("\n");
+
+    // Wait for 3 seconds
+    sleep(3);
 
     // After initializing the road and finding the dominant color we need to find the 
     // dominant direction to start the simulation
@@ -66,24 +83,100 @@ int main(int argc, char *argv[]){
 
     // The simulation starts here
 
+    // Create threads for each pedestrian
+    pthread_t threads[num_pedestrians];
+    for(int i = 0; i < num_pedestrians; i++){
+        // Create the argument for the thread
+        Arg_t arg = malloc(sizeof(struct Arg));
+        arg->pedestrian = road[i];
+        arg->road = road;
+        arg->road_length = num_pedestrians;
+
+        // Create the thread
+        pthread_create(&threads[i], NULL, cross_road, arg);
+    }
+
     // Makes a copy of the road (which will represent the pavement) without the pedestrians of the 
     // dominant color and direction. We have to free the memory allocated for the copy later
     Pedestrian_t *pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
 
+
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
 
-    // Prints the road's state after removing the pedestrians
-    print_road(num_pedestrians, road);
-    print_divider(num_pedestrians);
-    print_road(num_pedestrians, pavement);
+    puts("State before the first step of the simulation starts:");
+    print_road_state(num_pedestrians, road, pavement);
+    sleep(2);
+
+    // As soon as we change the state to ROAD the pedestrians will start moving
+    change_state(num_pedestrians, road, ROAD);
+
+    // Prints the road's state as long as there are pedestrians on the road
+    while(!is_empty(num_pedestrians, road)) print_road_state(num_pedestrians, road, pavement);
+
+    // After the first step we need the pedestrians of the dominant color and the opposite direction
+    // to move as well while the others wait at the pavement
+    road = pavement;
+    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
+    remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
+
+    puts("State before the second step of the simulation starts:");
+    print_road_state(num_pedestrians, road, pavement);
+    sleep(2);
+
+    // Here is where we make them move again
+    change_state(num_pedestrians, road, ROAD);
+
+    // Prints the road's state as long as there are pedestrians on the road
+    while(!is_empty(num_pedestrians, road)) print_road_state(num_pedestrians, road, pavement);
+
+    // Wait for all the threads to finish
+    for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
     
     return 0;
 }
 
-// void* cross_road(void *arg){
-//     Pedestrian_t pedestrian = (Pedestrian_t)arg;
-// }
+void* cross_road(void *arg){
+    Arg_t args = (Arg_t)arg;
+    Pedestrian_t pedestrian = args->pedestrian;
+    Pedestrian_t *road = args->road;
+    int road_length = args->road_length;
+
+    while(pedestrian->state != FINISHED){
+        // When the pedestrian is on the road he has to move until he reaches the other side
+        // checking if there is a pedestrian in front of him
+        if(pedestrian->state == ROAD){
+            // If there is a pedestrian in front of him he has to wait
+            if(road[pedestrian->index + pedestrian->direction] != NULL){
+                //pthread_mutex_unlock(&mutex);
+                continue;
+            }
+            // If there is no pedestrian in front of him he can move
+
+            pedestrian->index += pedestrian->direction;
+
+            // If the pedestrian has reached the other side of the road, we set the 
+            // pedestrian's state to FINISHED
+            if(pedestrian->index == road_length || pedestrian->index == -1){
+                pedestrian->state = FINISHED;
+                continue; 
+            }
+
+            // Else we move the pedestrian to the next position on the road
+            
+            //pthread_mutex_lock(&mutex);
+            road[pedestrian->index] = pedestrian;
+            road[pedestrian->index - pedestrian->direction] = NULL;
+            //pthread_mutex_unlock(&mutex);
+        }
+    }
+    // After the pedestrian has reached the other side of the road we
+    // free the memory allocated for him
+    free(pedestrian);
+
+    // We don't free the road because it is common for all pedestrians
+    free(arg);
+}
 
 // Prints a pedestrian's information
 void print_pedestrian(Pedestrian_t pedestrian){
@@ -151,15 +244,18 @@ int init_road(int capacity, Pedestrian_t road[]){
         // Keeps track of how many blue pedestrians are on the road
         if(pedestrian->color == BLUE) blue_count++;
         pedestrian->direction = random(0, 1) ? EAST : WEST;
-        pedestrian->state = ROAD;
+        pedestrian->state = PAVEMENT;
+
 
         if(pedestrian->direction == EAST){
             road[east_pointer] = pedestrian;
+            pedestrian->index = east_pointer;
             east_pointer++;
             continue;
         }
 
         road[west_pointer] = pedestrian;
+        pedestrian->index = west_pointer;
         west_pointer--;
     }
 
@@ -173,7 +269,6 @@ Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, D
     for(int i = 0; i < capacity; i++){
         if(pedestrians[i]->color != color || pedestrians[i]->direction != direction){
             copy[i] = pedestrians[i];
-            copy[i]->state = PAVEMENT;
         }
     }
     return copy;
@@ -207,4 +302,34 @@ Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Colo
     }
 
     return east_count > west_count ? EAST : WEST;
+}
+
+// Changes the state of all pedestrians in the given road to the given state
+void change_state(int capacity, Pedestrian_t pedestrians[], State state){
+    for(int i = 0; i < capacity; i++){
+        if(pedestrians[i] != NULL){
+            pedestrians[i]->state = state;
+        }
+    }
+}
+
+// Returns if the given road is empty or not
+int is_empty(int capacity, Pedestrian_t pedestrians[]){
+    for(int i = 0; i < capacity; i++){
+        if(pedestrians[i] != NULL){
+            return 0;
+        }
+    }
+    return 1;
+}
+
+// Prints the state of the road and the pavement
+void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]){
+    // Clear the screen
+    printf("\033[H\033[J");
+
+    print_road(capacity, road);
+    print_divider(capacity);
+    print_road(capacity, pavement);
+    
 }
