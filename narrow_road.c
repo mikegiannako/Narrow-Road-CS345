@@ -25,7 +25,6 @@ typedef struct Arg{
 }* Arg_t;
 
 int finished = 0;
-Pedestrian_t *pavement;
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
@@ -105,7 +104,7 @@ int main(int argc, char *argv[]){
 
     // Makes a copy of the road (which will represent the pavement) without the pedestrians of the
     // dominant color and direction. We have to free the memory allocated for the copy later
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
+    Pedestrian_t *pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
 
 
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
@@ -169,7 +168,7 @@ void *cross_road(void *arg){
             pedestrian->index += pedestrian->direction;
             road[pedestrian->index] = pedestrian;
             road[pedestrian->index - pedestrian->direction] = NULL;
-            print_road_state(road_length, road, pavement, NULL);
+            print_road_state(road_length, road);)
             pthread_mutex_unlock(&mutex);
         }
     }
@@ -344,13 +343,13 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
     puts("\n");
 }
 
-// Changes the road and pavemenet after the completion of each stage
-void change_road_state(int capacity, Pedestrian_t road[],
- Pedestrian_t pavemen[], Color color, Direction direction){
+// Changes the road and pavement after the completion of each stage
+void change_road_state(int capacity, Pedestrian_t *road,
+ Pedestrian_t *pavement, Color color, Direction direction){
     // Make the road a copy of the pavement
-    for(int i = 0; i < capacity; i++) road[i] = pavemen[i];
-    free(pavemen);
-    pavemen = copy_road(capacity, road, color, direction);
+    for(int i = 0; i < capacity; i++) road[i] = pavement[i];
+    free(pavement);
+    pavement = copy_road(capacity, road, color, direction);
     remove_pedestrians(capacity, road, color, direction);
     change_state(capacity, road, ROAD);
     while(!is_empty(capacity, road));
