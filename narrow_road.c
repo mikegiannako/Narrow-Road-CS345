@@ -124,7 +124,7 @@ int main(int argc, char *argv[]){
     change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
 
     dominant_color = dominant_color == BLUE ? RED : BLUE;
-    dominant_color = find dominant direction(num_pedestrians, road, dominant_color);
+    dominant_direction = find_dominant_direction(num_pedestrians, pavement, dominant_color);
     change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
 
     dominant_direction = dominant_direction == EAST ? WEST : EAST;
@@ -350,10 +350,10 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
 void change_road_state(int capacity, Pedestrian_t road[],
  Pedestrian_t pavement[], Color color, Direction direction){
     // Make the road a copy of the pavement
-    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
+    for(int i = 0; i < capacity; i++) road[i] = pavement[i];
     free(pavement);
-    pavement = copy_road(num_pedestrians, road, color, direction);
-    remove_pedestrians(num_pedestrians, road, color, direction);
-    change_state(num_pedestrians, road, ROAD);
-    while(!is_empty(num_pedestrians, road));
+    pavement = copy_road(capacity, road, color, direction);
+    remove_pedestrians(capacity, road, color, direction);
+    change_state(capacity, road, ROAD);
+    while(!is_empty(capacity, road));
 }
