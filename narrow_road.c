@@ -26,7 +26,7 @@ typedef struct Arg{
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
-void cross_road(void *arg);
+void *cross_road(void *arg);
 // Prints a pedestrian's information
 void print_pedestrian(Pedestrian_t pedestrian);
 // Prints the current state of the road
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void cross_road(void *arg){
+void *cross_road(void *arg){
     Arg_t args = (Arg_t)arg;
     Pedestrian_t pedestrian = args->pedestrian;
     Pedestrian_t *road = args->road;
@@ -177,6 +177,8 @@ void cross_road(void *arg){
 
     // We don't free the road because it is common for all pedestrians
     free(arg);
+    
+    return NULL;
 }
 
 // Prints a pedestrian's information
