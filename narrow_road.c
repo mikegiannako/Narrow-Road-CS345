@@ -72,7 +72,8 @@ int main(int argc, char *argv[]){
     Color dominant_color = blue_count > num_pedestrians / 2 ? BLUE : RED;
 
     // Prints the road's initial state
-    print_road(num_pedestrians, road, "Initial state:");
+    puts("Initial state of the road:");
+    print_road(num_pedestrians, road);
 
     // Wait for 3 seconds
     sleep(3);
@@ -129,7 +130,8 @@ int main(int argc, char *argv[]){
     change_state(num_pedestrians, road, ROAD);
 
     // Prints the road's state as long as there are pedestrians on the road
-    while(!is_empty(num_pedestrians, road)) print_road_state(num_pedestrians, road, pavement);
+    while(!is_empty(num_pedestrians, road));
+        //print_road_state(num_pedestrians, road, pavement);
 
     // Wait for all the threads to finish
     for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
@@ -326,7 +328,7 @@ int is_empty(int capacity, Pedestrian_t pedestrians[]){
 // Prints the state of the road and the pavement
 void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message){
     // Clear the screen
-    printf("\033[H\033[J");
+    // printf("\033[H\033[J");
 
     if(message) puts(message);
 
