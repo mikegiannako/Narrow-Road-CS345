@@ -80,7 +80,7 @@ int main(int argc, char *argv[]){
 
     // After initializing the road and finding the dominant color we need to find the 
     // dominant direction to start the simulation
-    Direction dominant_direction = find_dominant_direction(num_pedestrians, road, BLUE);
+    Direction dominant_direction = find_dominant_direction(num_pedestrians, road, dominant_color);
 
     // The simulation starts here
 
@@ -153,8 +153,10 @@ void *cross_road(void *arg){
             if(pedestrian->index + pedestrian->direction == road_length 
                 || pedestrian->index + pedestrian->direction == -1){ 
 
+                pthread_mutex_lock(&mutex);
                 pedestrian->state = FINISHED;
                 road[pedestrian->index] = NULL;
+                pthread_mutex_unlock(&mutex);
                 continue;
             }
 
@@ -335,5 +337,5 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
     print_road(capacity, road);
     print_divider(capacity);
     print_road(capacity, pavement);
-    
+    puts("\n");   
 }
