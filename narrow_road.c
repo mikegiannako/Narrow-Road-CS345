@@ -52,6 +52,9 @@ void change_state(int capacity, Pedestrian_t pedestrians[], State state);
 int is_empty(int capacity, Pedestrian_t pedestrians[]);
 // Prints the state of the road and the pavement
 void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message);
+// Changes the road and pavemenet after the completion of each stage
+void change_road_state(int capacity, Pedestrian_t road[],
+ Pedestrian_t pavement[], Color color, Direction direction);
 
 
 int main(int argc, char *argv[]){
@@ -108,10 +111,6 @@ int main(int argc, char *argv[]){
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
 
-    print_road_state(num_pedestrians, road, pavement,
-     "State before the first step of the simulation starts:");
-    sleep(2);
-
     // As soon as we change the state to ROAD the pedestrians will start moving
     change_state(num_pedestrians, road, ROAD);
 
@@ -121,48 +120,15 @@ int main(int argc, char *argv[]){
     // After the first step we need the pedestrians of the dominant color and the opposite direction
     // to move as well while the others wait at the pavement
 
-    // Make the road a copy of the pavement
-    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
+    dominant_direction = dominant_direction == EAST ? WEST : EAST;
+    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
 
-    free(pavement);
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
-    remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
-
-    print_road_state(num_pedestrians, road, pavement,
-     "State before the second step of the simulation starts:");
-    sleep(2);
-
-    change_state(num_pedestrians, road, ROAD);
-
-    while(!is_empty(num_pedestrians, road));
-
-    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
-    free(pavement);
     dominant_color = dominant_color == BLUE ? RED : BLUE;
-    dominant_direction = find_dominant_direction(num_pedestrians, road, dominant_color);
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
-    remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
+    dominant_color = find dominant direction(num_pedestrians, road, dominant_color);
+    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
 
-    print_road_state(num_pedestrians, road, pavement,
-     "State before the thrid step of the simulation starts:");
-    sleep(2);
-
-    change_state(num_pedestrians, road, ROAD);
-
-    while(!is_empty(num_pedestrians, road));
-
-    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
-    free(pavement);
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
-    remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
-
-    print_road_state(num_pedestrians, road, pavement,
-     "State before the last step of the simulation starts:");
-    sleep(2);
-
-    change_state(num_pedestrians, road, ROAD);
-
-    while(!is_empty(num_pedestrians, road));
+    dominant_direction = dominant_direction == EAST ? WEST : EAST;
+    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
 
     finished = 1;
 
@@ -378,4 +344,16 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
     print_divider(capacity);
     print_road(capacity, pavement);
     puts("\n");
+}
+
+// Changes the road and pavemenet after the completion of each stage
+void change_road_state(int capacity, Pedestrian_t road[],
+ Pedestrian_t pavement[], Color color, Direction direction){
+    // Make the road a copy of the pavement
+    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
+    free(pavement);
+    pavement = copy_road(num_pedestrians, road, color, direction);
+    remove_pedestrians(num_pedestrians, road, color, direction);
+    change_state(num_pedestrians, road, ROAD);
+    while(!is_empty(num_pedestrians, road));
 }
