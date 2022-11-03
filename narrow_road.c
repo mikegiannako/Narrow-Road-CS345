@@ -10,8 +10,6 @@ typedef enum {RED, BLUE} Color;
 typedef enum {EAST = 1, WEST = -1} Direction;
 typedef enum {ROAD, PAVEMENT, FINISHED} State;
 
-int finished = 0;
-
 typedef struct Pedestrian{
     int id;                 // Pedestrian ID
     int index;              // Pedestrian index on the road
@@ -25,6 +23,9 @@ typedef struct Arg{
     Pedestrian_t *road;
     int road_length;
 }* Arg_t;
+
+int finished = 0;
+Pedestrian_t *pavement;
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
@@ -101,7 +102,7 @@ int main(int argc, char *argv[]){
 
     // Makes a copy of the road (which will represent the pavement) without the pedestrians of the 
     // dominant color and direction. We have to free the memory allocated for the copy later
-    Pedestrian_t *pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
+    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
 
 
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
@@ -116,11 +117,14 @@ int main(int argc, char *argv[]){
 
     // Prints the road's state as long as there are pedestrians on the road
     while(!is_empty(num_pedestrians, road));
-    //    print_road_state(num_pedestrians, road, pavement, "Moving Stage 1");
 
     // After the first step we need the pedestrians of the dominant color and the opposite direction
     // to move as well while the others wait at the pavement
-    road = pavement;
+
+    // Make the road a copy of the pavement
+    for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
+
+    free(pavement);
     pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
 
@@ -133,7 +137,6 @@ int main(int argc, char *argv[]){
 
     // Prints the road's state as long as there are pedestrians on the road
     while(!is_empty(num_pedestrians, road));
-        //print_road_state(num_pedestrians, road, pavement);
 
     finished = 1;
 
@@ -161,6 +164,7 @@ void *cross_road(void *arg){
                 pthread_mutex_lock(&mutex);
                 pedestrian->state = FINISHED;
                 road[pedestrian->index] = NULL;
+                print_road_state(road_length, road, pavement, NULL);
                 pthread_mutex_unlock(&mutex);
                 continue;
             }
@@ -173,6 +177,7 @@ void *cross_road(void *arg){
             pedestrian->index += pedestrian->direction;
             road[pedestrian->index] = pedestrian;
             road[pedestrian->index - pedestrian->direction] = NULL;
+            print_road_state(road_length, road, pavement, NULL);
             pthread_mutex_unlock(&mutex);
         }
     }
