@@ -299,9 +299,7 @@ Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Colo
     int west_count = 0;
 
     for(int i = 0; i < capacity; i++){
-        if(pedestrians[i]->color != color){
-            continue;
-        }
+        if(!pedestrians[i] || pedestrians[i]->color != color) continue;
 
         if(pedestrians[i]->direction == EAST){
             east_count++;
@@ -348,11 +346,11 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
 
 // Changes the road and pavemenet after the completion of each stage
 void change_road_state(int capacity, Pedestrian_t road[],
- Pedestrian_t pavement[], Color color, Direction direction){
+ Pedestrian_t pavemen[], Color color, Direction direction){
     // Make the road a copy of the pavement
-    for(int i = 0; i < capacity; i++) road[i] = pavement[i];
-    free(pavement);
-    pavement = copy_road(capacity, road, color, direction);
+    for(int i = 0; i < capacity; i++) road[i] = pavemen[i];
+    free(pavemen);
+    pavemen = copy_road(capacity, road, color, direction);
     remove_pedestrians(capacity, road, color, direction);
     change_state(capacity, road, ROAD);
     while(!is_empty(capacity, road));
