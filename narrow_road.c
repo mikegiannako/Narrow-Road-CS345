@@ -32,28 +32,28 @@ void *cross_road(void *arg);
 // Prints a pedestrian's information
 void print_pedestrian(Pedestrian_t pedestrian);
 // Prints the current state of the road
-void print_road(int capacity, Pedestrian_t pedestrians[]);
+void print_road(int capacity, Pedestrian_t *pedestrians);
 // Prints dividing line between road states
 void print_divider(int capacity);
 // Initializes the road with pedestrians and returns how many blue
 // pedestrians are on the road
-int init_road(int capacity, Pedestrian_t pedestrians[]);
+int init_road(int capacity, Pedestrian_t *pedestrians);
 // Creates a copy of the road without the pedestrians of the given color and direction
 // and returns it. Caller is responsible for freeing the memory allocated for the copy
-Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction);
+Pedestrian_t *copy_road(int capacity, Pedestrian_t *pedestrians, Color color, Direction direction);
 // Removes all pedestrians except those of the given color and direction from the road
-void remove_pedestrians(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction);
+void remove_pedestrians(int capacity, Pedestrian_t *pedestrians, Color color, Direction direction);
 // Finds the dominant direction of the pedestrians of the chosen color
-Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Color color);
+Direction find_dominant_direction(int capacity, Pedestrian_t *pedestrians, Color color);
 // Changes the state of all pedestrians in the given road to the given state
-void change_state(int capacity, Pedestrian_t pedestrians[], State state);
+void change_state(int capacity, Pedestrian_t *pedestrians, State state);
 // Returns if the given road is empty or not
-int is_empty(int capacity, Pedestrian_t pedestrians[]);
+int is_empty(int capacity, Pedestrian_t *pedestrians);
 // Prints the state of the road and the pavement
-void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message);
+void print_road_state(int capacity, Pedestrian_t *road, Pedestrian_t *pavement, char* message);
 // Changes the road and pavemenet after the completion of each stage
-void change_road_state(int capacity, Pedestrian_t road[],
- Pedestrian_t pavement[], Color color, Direction direction);
+void change_road_state(int capacity, Pedestrian_t *road,
+ Pedestrian_t *pavement, Color color, Direction direction);
 
 
 int main(int argc, char *argv[]){
@@ -120,20 +120,19 @@ int main(int argc, char *argv[]){
     // to move as well while the others wait at the pavement
 
     dominant_direction = dominant_direction == EAST ? WEST : EAST;
-    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
+    change_road_state(num_pedestrians, &road, &pavement, dominant_color, dominant_direction);
 
     dominant_color = dominant_color == BLUE ? RED : BLUE;
     dominant_direction = find_dominant_direction(num_pedestrians, pavement, dominant_color);
-    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
+    change_road_state(num_pedestrians, &road, &pavement, dominant_color, dominant_direction);
 
     dominant_direction = dominant_direction == EAST ? WEST : EAST;
-    change_road_state(num_pedestrians, road, pavement, dominant_color, dominant_direction);
+    change_road_state(num_pedestrians, &road, &pavement, dominant_color, dominant_direction);
 
     finished = 1;
 
     // Wait for all the threads to finish
     for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
-
 
     return 0;
 }
@@ -213,7 +212,7 @@ void print_pedestrian(Pedestrian_t pedestrian){
 }
 
 // Prints the current state of the road
-void print_road(int capacity, Pedestrian_t road[]){
+void print_road(int capacity, Pedestrian_t *road){
     // For every spot on the road prints the pedestrian that is there else print a space
     for(int i = 0; i < capacity; i++){
         printf("||");
@@ -238,7 +237,7 @@ void print_divider(int capacity){
 
 // Initializes the road with pedestrians and returns how many blue
 // pedestrians are on the road
-int init_road(int capacity, Pedestrian_t road[]){
+int init_road(int capacity, Pedestrian_t *road){
     int east_pointer = 0;
     int west_pointer = capacity - 1;
     int blue_count = 0;
@@ -272,7 +271,7 @@ int init_road(int capacity, Pedestrian_t road[]){
 
 // Creates a copy of the road without the pedestrians of the given color and direction
 // and returns it. Caller is responsible for freeing the memory allocated for the copy
-Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction){
+Pedestrian_t *copy_road(int capacity, Pedestrian_t *pedestrians, Color color, Direction direction){
     Pedestrian_t *copy = calloc(capacity, sizeof(Pedestrian_t));
     for(int i = 0; i < capacity; i++){
         if(!pedestrians[i] || pedestrians[i]->color != color || pedestrians[i]->direction != direction){
@@ -283,7 +282,7 @@ Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, D
 }
 
 // Removes all pedestrians except those of the given color and direction from the road
-void remove_pedestrians(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction){
+void remove_pedestrians(int capacity, Pedestrian_t *pedestrians, Color color, Direction direction){
     for(int i = 0; i < capacity; i++){
         if(!pedestrians[i]) continue;
         if(pedestrians[i]->color != color || pedestrians[i]->direction != direction){
@@ -293,7 +292,7 @@ void remove_pedestrians(int capacity, Pedestrian_t pedestrians[], Color color, D
 }
 
 // Finds the dominant direction of the pedestrians of the chosen color
-Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Color color){
+Direction find_dominant_direction(int capacity, Pedestrian_t *pedestrians, Color color){
     int east_count = 0;
     int west_count = 0;
 
@@ -312,7 +311,7 @@ Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Colo
 }
 
 // Changes the state of all pedestrians in the given road to the given state
-void change_state(int capacity, Pedestrian_t pedestrians[], State state){
+void change_state(int capacity, Pedestrian_t *pedestrians, State state){
     for(int i = 0; i < capacity; i++){
         if(pedestrians[i] != NULL){
             pedestrians[i]->state = state;
@@ -321,7 +320,7 @@ void change_state(int capacity, Pedestrian_t pedestrians[], State state){
 }
 
 // Returns if the given road is empty or not
-int is_empty(int capacity, Pedestrian_t pedestrians[]){
+int is_empty(int capacity, Pedestrian_t *pedestrians){
     for(int i = 0; i < capacity; i++){
         if(pedestrians[i] != NULL){
             return 0;
@@ -331,7 +330,7 @@ int is_empty(int capacity, Pedestrian_t pedestrians[]){
 }
 
 // Prints the state of the road and the pavement
-void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message){
+void print_road_state(int capacity, Pedestrian_t *road, Pedestrian_t *pavement, char* message){
     // Clear the screen
     // printf("\033[H\033[J");
 
@@ -344,13 +343,13 @@ void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]
 }
 
 // Changes the road and pavement after the completion of each stage
-void change_road_state(int capacity, Pedestrian_t *road,
- Pedestrian_t *pavement, Color color, Direction direction){
+void change_road_state(int capacity, Pedestrian_t **road,
+ Pedestrian_t **pavement, Color color, Direction direction){
     // Make the road a copy of the pavement
     for(int i = 0; i < capacity; i++) road[i] = pavement[i];
-    free(pavement);
-    pavement = copy_road(capacity, road, color, direction);
-    remove_pedestrians(capacity, road, color, direction);
-    change_state(capacity, road, ROAD);
-    while(!is_empty(capacity, road));
+    free(*pavement);
+    *pavement = copy_road(capacity, *road, color, direction);
+    remove_pedestrians(capacity, *road, color, direction);
+    change_state(capacity, *road, ROAD);
+    while(!is_empty(capacity, *road));
 }
