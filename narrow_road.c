@@ -10,6 +10,8 @@ typedef enum {RED, BLUE} Color;
 typedef enum {EAST = 1, WEST = -1} Direction;
 typedef enum {ROAD, PAVEMENT, FINISHED} State;
 
+int finished = 0;
+
 typedef struct Pedestrian{
     int id;                 // Pedestrian ID
     int index;              // Pedestrian index on the road
@@ -113,7 +115,7 @@ int main(int argc, char *argv[]){
     change_state(num_pedestrians, road, ROAD);
 
     // Prints the road's state as long as there are pedestrians on the road
-    //while(!is_empty(num_pedestrians, road))
+    while(!is_empty(num_pedestrians, road));
     //    print_road_state(num_pedestrians, road, pavement, "Moving Stage 1");
 
     // After the first step we need the pedestrians of the dominant color and the opposite direction
@@ -133,8 +135,11 @@ int main(int argc, char *argv[]){
     while(!is_empty(num_pedestrians, road));
         //print_road_state(num_pedestrians, road, pavement);
 
+    finished = 1;
+
     // Wait for all the threads to finish
     for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
+
     
     return 0;
 }
@@ -178,6 +183,9 @@ void *cross_road(void *arg){
 
     // We don't free the road because it is common for all pedestrians
     free(arg);
+
+    while(!finished);
+    sleep(1);
     
     return NULL;
 }
