@@ -48,7 +48,7 @@ void change_state(int capacity, Pedestrian_t pedestrians[], State state);
 // Returns if the given road is empty or not
 int is_empty(int capacity, Pedestrian_t pedestrians[]);
 // Prints the state of the road and the pavement
-void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]);
+void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message);
 
 
 int main(int argc, char *argv[]){
@@ -72,8 +72,7 @@ int main(int argc, char *argv[]){
     Color dominant_color = blue_count > num_pedestrians / 2 ? BLUE : RED;
 
     // Prints the road's initial state
-    puts("Initial state:");
-    print_road(num_pedestrians, road);
+    print_road(num_pedestrians, road, "Initial state:");
 
     // Wait for 3 seconds
     sleep(3);
@@ -105,15 +104,16 @@ int main(int argc, char *argv[]){
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
 
-    puts("State before the first step of the simulation starts:");
-    print_road_state(num_pedestrians, road, pavement);
+    print_road_state(num_pedestrians, road, pavement,
+     "State before the first step of the simulation starts:");
     sleep(2);
 
     // As soon as we change the state to ROAD the pedestrians will start moving
     change_state(num_pedestrians, road, ROAD);
 
     // Prints the road's state as long as there are pedestrians on the road
-    while(!is_empty(num_pedestrians, road)) print_road_state(num_pedestrians, road, pavement);
+    //while(!is_empty(num_pedestrians, road))
+    //    print_road_state(num_pedestrians, road, pavement, "Moving Stage 1");
 
     // After the first step we need the pedestrians of the dominant color and the opposite direction
     // to move as well while the others wait at the pavement
@@ -121,8 +121,8 @@ int main(int argc, char *argv[]){
     pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
 
-    puts("State before the second step of the simulation starts:");
-    print_road_state(num_pedestrians, road, pavement);
+    print_road_state(num_pedestrians, road, pavement,
+     "State before the second step of the simulation starts:");
     sleep(2);
 
     // Here is where we make them move again
@@ -160,16 +160,14 @@ void *cross_road(void *arg){
             if(road[pedestrian->index + pedestrian->direction] != NULL) continue;
             
             // If there is no pedestrian in front of him he can move
-
-            pedestrian->index += pedestrian->direction;
-
-            // Else we move the pedestrian to the next position on the road
             pthread_mutex_lock(&mutex);
+            pedestrian->index += pedestrian->direction;
             road[pedestrian->index] = pedestrian;
             road[pedestrian->index - pedestrian->direction] = NULL;
             pthread_mutex_unlock(&mutex);
         }
     }
+
     // After the pedestrian has reached the other side of the road we
     // free the memory allocated for him
     free(pedestrian);
@@ -326,9 +324,11 @@ int is_empty(int capacity, Pedestrian_t pedestrians[]){
 }
 
 // Prints the state of the road and the pavement
-void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[]){
+void print_road_state(int capacity, Pedestrian_t road[], Pedestrian_t pavement[], char* message){
     // Clear the screen
     printf("\033[H\033[J");
+
+    if(message) puts(message);
 
     print_road(capacity, road);
     print_divider(capacity);
