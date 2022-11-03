@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <unistd.h>
 #include "random.h"
 
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -25,7 +26,7 @@ typedef struct Arg{
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
-void *cross_road(void *arg);
+void cross_road(void *arg);
 // Prints a pedestrian's information
 void print_pedestrian(Pedestrian_t pedestrian);
 // Prints the current state of the road
@@ -136,7 +137,7 @@ int main(int argc, char *argv[]){
     return 0;
 }
 
-void* cross_road(void *arg){
+void cross_road(void *arg){
     Arg_t args = (Arg_t)arg;
     Pedestrian_t pedestrian = args->pedestrian;
     Pedestrian_t *road = args->road;
@@ -240,10 +241,10 @@ int init_road(int capacity, Pedestrian_t road[]){
     for(int i = 0; i < capacity; i++){
         Pedestrian_t pedestrian = malloc(sizeof(struct Pedestrian));
         pedestrian->id = i + 1;
-        pedestrian->color = random(0, 1) ? BLUE : RED;
+        pedestrian->color = randomc(0, 1) ? BLUE : RED;
         // Keeps track of how many blue pedestrians are on the road
         if(pedestrian->color == BLUE) blue_count++;
-        pedestrian->direction = random(0, 1) ? EAST : WEST;
+        pedestrian->direction = randomc(0, 1) ? EAST : WEST;
         pedestrian->state = PAVEMENT;
 
 

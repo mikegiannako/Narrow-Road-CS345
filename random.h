@@ -2,7 +2,7 @@
 #define _RANDOM_H_
 
 // Returns a random number between [min, max]
-int random(int min, int max);
+int randomc(int min, int max);
 
 // Returns a randomized arrary with number from 1 to n
 // The array has to be freed by the caller of the function

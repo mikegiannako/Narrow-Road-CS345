@@ -14,7 +14,7 @@ void init_random(){
 }
 
 // Returns a random number between [min, max]
-int random(int min, int max){
+int randomc(int min, int max){
     init_random();
     return rand() % (max - min + 1) + min;
 }
@@ -36,7 +36,7 @@ int* random_array(int n){
 
     // Randomize the array
     for(int i = 0; i < n; i++){
-        int j = random(0, n - 1);
+        int j = randomc(0, n - 1);
         int temp = array[i];
         array[i] = array[j];
         array[j] = temp;
