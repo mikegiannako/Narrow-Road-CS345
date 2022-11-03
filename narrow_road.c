@@ -123,6 +123,8 @@ int main(int argc, char *argv[]){
 
     // Make the road a copy of the pavement
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
+    print_road_state(num_pedestrians, road, pavement,
+     "State after the first step of the simulation ends:");
 
     free(pavement);
     pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
@@ -161,7 +163,7 @@ void *cross_road(void *arg){
             if(pedestrian->index + pedestrian->direction == road_length 
                 || pedestrian->index + pedestrian->direction == -1){ 
 
-                pthread_mutex_lock(&mutex);
+                while(pthread_mutex_trylock(&mutex));
                 pedestrian->state = FINISHED;
                 road[pedestrian->index] = NULL;
                 print_road_state(road_length, road, pavement, NULL);
@@ -173,7 +175,7 @@ void *cross_road(void *arg){
             if(road[pedestrian->index + pedestrian->direction] != NULL) continue;
             
             // If there is no pedestrian in front of him he can move
-            pthread_mutex_lock(&mutex);
+            while(pthread_mutex_trylock(&mutex));
             pedestrian->index += pedestrian->direction;
             road[pedestrian->index] = pedestrian;
             road[pedestrian->index - pedestrian->direction] = NULL;
