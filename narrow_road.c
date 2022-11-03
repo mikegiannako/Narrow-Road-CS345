@@ -148,12 +148,12 @@ void *cross_road(void *arg){
         // checking if there is a pedestrian in front of him
         if(pedestrian->state == ROAD){
             // If the next position is the end of the road the pedestrian has reached the other side
-            if(pedestrian->position + pedestrian->direction == road_length 
-                || pedestrian->position + pedestrian->direction == -1){ 
+            if(pedestrian->index + pedestrian->direction == road_length 
+                || pedestrian->index + pedestrian->direction == -1){ 
                 pedestrian->state = FINISHED;
                 continue;
             }
-            
+
             // If there is a pedestrian in front of him he has to wait
             if(road[pedestrian->index + pedestrian->direction] != NULL){
                 //pthread_mutex_unlock(&mutex);
