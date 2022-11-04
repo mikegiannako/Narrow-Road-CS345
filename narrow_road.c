@@ -78,7 +78,7 @@ int main(int argc, char *argv[]){
     print_road(num_pedestrians, road);
 
     // Wait for 3 seconds
-    sleep(3);
+    sleep(5);
 
     // After initializing the road and finding the dominant color we need to find the
     // dominant direction to start the simulation
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]){
 
     print_road_state(num_pedestrians, road, pavement,
      "State before the first step of the simulation starts:");
-    sleep(2);
+    sleep(5);
 
     // As soon as we change the state to ROAD the pedestrians will start moving
     change_state(num_pedestrians, road, ROAD);
@@ -131,7 +131,7 @@ int main(int argc, char *argv[]){
 
     print_road_state(num_pedestrians, road, pavement,
      "State before the second step of the simulation starts:");
-    sleep(2);
+    sleep(5);
 
     change_state(num_pedestrians, road, ROAD);
 
@@ -147,7 +147,7 @@ int main(int argc, char *argv[]){
 
     print_road_state(num_pedestrians, road, pavement,
      "State before the thrid step of the simulation starts:");
-    sleep(2);
+    sleep(5);
 
     change_state(num_pedestrians, road, ROAD);
 
@@ -159,7 +159,7 @@ int main(int argc, char *argv[]){
 
     print_road_state(num_pedestrians, road, pavement,
      "State before the last step of the simulation starts:");
-    sleep(2);
+    sleep(5);
 
     change_state(num_pedestrians, road, ROAD);
 
