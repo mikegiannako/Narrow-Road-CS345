@@ -21,11 +21,10 @@ typedef struct Pedestrian{
 typedef struct Arg{
     Pedestrian_t pedestrian;
     Pedestrian_t *road;
+    Pedestrian_t *pavement;
+    int *finished;
     int road_length;
 }* Arg_t;
-
-int finished = 0;
-Pedestrian_t *pavement;
 
 // Represents act of a pedestrian taking a step
 // until they reach the other side of the road
@@ -39,9 +38,8 @@ void print_divider(int capacity);
 // Initializes the road with pedestrians and returns how many blue
 // pedestrians are on the road
 int init_road(int capacity, Pedestrian_t pedestrians[]);
-// Creates a copy of the road without the pedestrians of the given color and direction
-// and returns it. Caller is responsible for freeing the memory allocated for the copy
-Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction);
+// Copies of the road without the pedestrians of the given color and direction
+void copy_road(int capacity,  Pedestrian_t dest[], Pedestrian_t src[], Color color, Direction direction);
 // Removes all pedestrians except those of the given color and direction from the road
 void remove_pedestrians(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction);
 // Finds the dominant direction of the pedestrians of the chosen color
@@ -70,6 +68,7 @@ int main(int argc, char *argv[]){
 
     // Create the road full of pedestrians
     Pedestrian_t *road = calloc(num_pedestrians, sizeof(Pedestrian_t));
+    Pedestrian_t *pavement = calloc(num_pedestrians, sizeof(Pedestrian_t));
     // Also keeps the count of blue and red pedestrians
     int blue_count = init_road(num_pedestrians, road);
     Color dominant_color = blue_count > num_pedestrians / 2 ? BLUE : RED;
@@ -87,6 +86,8 @@ int main(int argc, char *argv[]){
 
     // The simulation starts here
 
+    int finished = 0;
+
     // Create threads for each pedestrian
     pthread_t threads[num_pedestrians];
     for(int i = 0; i < num_pedestrians; i++){
@@ -95,6 +96,8 @@ int main(int argc, char *argv[]){
         arg->pedestrian = road[i];
         arg->road = road;
         arg->road_length = num_pedestrians;
+        arg->pavement = pavement;
+        arg->finished = &finished;
 
         // Create the thread
         pthread_create(&threads[i], NULL, cross_road, arg);
@@ -102,8 +105,7 @@ int main(int argc, char *argv[]){
 
     // Makes a copy of the road (which will represent the pavement) without the pedestrians of the
     // dominant color and direction. We have to free the memory allocated for the copy later
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
-
+    copy_road(num_pedestrians, pavement, road, dominant_color, dominant_direction);
 
     // Removes all other pedestrians that aren't of the dominant color and direction from the road
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
@@ -124,8 +126,7 @@ int main(int argc, char *argv[]){
     // Make the road a copy of the pavement
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
 
-    free(pavement);
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
+    copy_road(num_pedestrians, pavement, road, dominant_color, dominant_direction * -1);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
 
     print_road_state(num_pedestrians, road, pavement,
@@ -137,12 +138,11 @@ int main(int argc, char *argv[]){
     while(!is_empty(num_pedestrians, road));
 
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
-    free(pavement);
 
     dominant_color = dominant_color == BLUE ? RED : BLUE;
     dominant_direction = find_dominant_direction(num_pedestrians, road, dominant_color);
 
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
+    copy_road(num_pedestrians, pavement, road, dominant_color, dominant_direction);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
 
     print_road_state(num_pedestrians, road, pavement,
@@ -154,8 +154,7 @@ int main(int argc, char *argv[]){
     while(!is_empty(num_pedestrians, road));
 
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
-    free(pavement);
-    pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction * -1);
+    copy_road(num_pedestrians, pavement, road, dominant_color, dominant_direction * -1);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
 
     print_road_state(num_pedestrians, road, pavement,
@@ -171,6 +170,9 @@ int main(int argc, char *argv[]){
     // Wait for all the threads to finish
     for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
 
+    free(road);
+    free(pavement);
+
     return 0;
 }
 
@@ -178,6 +180,8 @@ void *cross_road(void *arg){
     Arg_t args = (Arg_t)arg;
     Pedestrian_t pedestrian = args->pedestrian;
     Pedestrian_t *road = args->road;
+    Pedestrian_t *pavement = args->pavement;
+    int* finished = args->finished;
     int road_length = args->road_length;
 
     while(pedestrian->state != FINISHED){
@@ -216,7 +220,7 @@ void *cross_road(void *arg){
     // We don't free the road because it is common for all pedestrians
     free(arg);
 
-    while(!finished);
+    while(!(*finished));
     sleep(1);
 
     return NULL;
@@ -224,9 +228,7 @@ void *cross_road(void *arg){
 
 // Prints a pedestrian's information
 void print_pedestrian(Pedestrian_t pedestrian){
-    if(pedestrian == NULL){
-        return;
-    }
+    if(pedestrian == NULL) return;
 
     if(pedestrian->color == BLUE){
         if(pedestrian->direction == EAST){
@@ -306,16 +308,13 @@ int init_road(int capacity, Pedestrian_t road[]){
     return blue_count;
 }
 
-// Creates a copy of the road without the pedestrians of the given color and direction
-// and returns it. Caller is responsible for freeing the memory allocated for the copy
-Pedestrian_t *copy_road(int capacity, Pedestrian_t pedestrians[], Color color, Direction direction){
-    Pedestrian_t *copy = calloc(capacity, sizeof(Pedestrian_t));
+// Copies without the pedestrians of the given color and direction
+void copy_road(int capacity,  Pedestrian_t dest[], Pedestrian_t src[], Color color, Direction direction){
     for(int i = 0; i < capacity; i++){
-        if(!pedestrians[i] || pedestrians[i]->color != color || pedestrians[i]->direction != direction){
-            copy[i] = pedestrians[i];
+        if(!src[i] || src[i]->color != color || src[i]->direction != direction){
+            dest[i] = src[i];
         }
     }
-    return copy;
 }
 
 // Removes all pedestrians except those of the given color and direction from the road
