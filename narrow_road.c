@@ -311,10 +311,13 @@ int init_road(int capacity, Pedestrian_t road[]){
 // Copies without the pedestrians of the given color and direction
 void copy_road(int capacity,  Pedestrian_t dest[], Pedestrian_t src[], Color color, Direction direction){
     for(int i = 0; i < capacity; i++){
-        if(!src[i]) continue;
+	if(!src[i]) continue;
         if(src[i]->color != color || src[i]->direction != direction){
             dest[i] = src[i];
+	    continue;
         }
+
+	dest[i] = NULL;
     }
 }
 
