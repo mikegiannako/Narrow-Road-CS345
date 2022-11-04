@@ -125,7 +125,6 @@ int main(int argc, char *argv[]){
 
     // Make the road a copy of the pavement
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
-
     copy_road(num_pedestrians, pavement, road, dominant_color, dominant_direction * -1);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction * -1);
 
@@ -215,6 +214,7 @@ void *cross_road(void *arg){
 
     // After the pedestrian has reached the other side of the road we
     // free the memory allocated for him
+    sleep(1);
     free(pedestrian);
 
     // We don't free the road because it is common for all pedestrians
@@ -311,7 +311,8 @@ int init_road(int capacity, Pedestrian_t road[]){
 // Copies without the pedestrians of the given color and direction
 void copy_road(int capacity,  Pedestrian_t dest[], Pedestrian_t src[], Color color, Direction direction){
     for(int i = 0; i < capacity; i++){
-        if(!src[i] || src[i]->color != color || src[i]->direction != direction){
+        if(!src[i]) continue;
+        if(src[i]->color != color || src[i]->direction != direction){
             dest[i] = src[i];
         }
     }
