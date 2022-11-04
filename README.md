@@ -24,8 +24,7 @@ also there.
 
 ### Known issues
 
-For unexpected reasons some times when the last pedestrians crosses the road during the 3rd stage some **pedestrians with
-weird IDs may appear at the pavement** for one iteration.
+None
 
 ### Future improvements
 
