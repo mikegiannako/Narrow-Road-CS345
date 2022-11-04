@@ -138,8 +138,10 @@ int main(int argc, char *argv[]){
 
     for(int i = 0; i < num_pedestrians; i++) road[i] = pavement[i];
     free(pavement);
+
     dominant_color = dominant_color == BLUE ? RED : BLUE;
     dominant_direction = find_dominant_direction(num_pedestrians, road, dominant_color);
+
     pavement = copy_road(num_pedestrians, road, dominant_color, dominant_direction);
     remove_pedestrians(num_pedestrians, road, dominant_color, dominant_direction);
 
@@ -168,7 +170,6 @@ int main(int argc, char *argv[]){
 
     // Wait for all the threads to finish
     for(int i = 0; i < num_pedestrians; i++) pthread_join(threads[i], NULL);
-
 
     return 0;
 }
@@ -333,6 +334,7 @@ Direction find_dominant_direction(int capacity, Pedestrian_t pedestrians[], Colo
     int west_count = 0;
 
     for(int i = 0; i < capacity; i++){
+        if(!pedestrians[i]) continue;
         if(pedestrians[i]->color != color){
             continue;
         }
